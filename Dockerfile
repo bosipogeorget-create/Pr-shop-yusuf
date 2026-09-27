@@ -1,27 +1,14 @@
-FROM php:8.1-apache
+FROM prestashop/prestashop:latest
 
-# 1. Install system dependencies and PHP extensions strictly required by PrestaShop 8
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libzip-dev \
-    libicu-dev \
-    libonig-dev \
-    libxml2-dev \
-    unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd zip intl pdo_mysql mbstring simplexml
+# 1. Increase PHP limits to ensure the theme and modules extract successfully
+RUN echo "max_execution_time = 300" > /usr/local/etc/php/conf.d/limits.ini \
+ && echo "memory_limit = 512M" >> /usr/local/etc/php/conf.d/limits.ini \
+ && echo "max_input_time = 300" >> /usr/local/etc/php/conf.d/limits.ini
 
-# 2. Enable Apache rewrite module (critical for PrestaShop friendly URLs and API)
-RUN a2enmod rewrite
+# 2. Patch MyISAM to InnoDB globally for Aiven MySQL compatibility
+RUN find /var/www/html -type f -name "*.php" -exec sed -i "s/ENGINE=MyISAM/ENGINE=InnoDB/g" {} + || true
+RUN find /var/www/html -type f -name "*.php" -exec sed -i "s/'MyISAM'/'InnoDB'/g" {} + || true
+RUN find /var/www/html -type f -name "*.php" -exec sed -i "s/\"MyISAM\"/\"InnoDB\"/g" {} + || true
 
-# 3. Copy your GitHub repository files into the container's web root
-COPY . /var/www/html/
-
-# 4. Grant strict but accessible ownership to the Apache user (fixes write-permission errors during install)
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
-
-# 5. Expose the standard web port for Railway's routing
-EXPOSE 80
+# 3. Create the unlock script so you can delete the install folder via your browser
+RUN echo '<?php system("rm -rf install/"); echo "Install folder deleted! You can now access your store."; ?>' > /var/www/html/unlock.php
