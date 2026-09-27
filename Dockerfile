@@ -1,6 +1,6 @@
 FROM prestashop/prestashop:latest
 
-# Disable both modules individually before enforcing prefork
-RUN a2dismod mpm_event || true
-RUN a2dismod mpm_worker || true
-RUN a2enmod mpm_prefork
+# Remove all MPM module symlinks to guarantee zero active MPMs, then enable prefork
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load \
+    && rm -f /etc/apache2/mods-enabled/mpm_*.conf \
+    && a2enmod mpm_prefork
