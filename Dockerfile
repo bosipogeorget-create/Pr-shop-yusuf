@@ -15,3 +15,9 @@ RUN find /var/www/html -type f -name "*.php" -exec sed -i "s/ENGINE=MyISAM/ENGIN
 
 # 4. Create Install Unlocker
 RUN echo '<?php system("rm -rf install/"); echo "Install folder deleted! You can now access your store."; ?>' > /var/www/html/unlock.php
+Set up MySQL client SSL defaults inside the container
+RUN echo "[client]" >> /etc/mysql/conf.d/aiven-ssl.cnf && \
+    echo "ssl-mode=REQUIRED" >> /etc/mysql/conf.d/aiven-ssl.cnf
+
+# Enable SSL for PrestaShop database setup
+ENV DB_USE_SSL=1
