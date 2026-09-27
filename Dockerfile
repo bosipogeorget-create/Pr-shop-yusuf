@@ -1,11 +1,9 @@
 FROM prestashop/prestashop:latest
 
-# Install ca-certificates and curl/wget
-RUN apt-get update && apt-get install -y ca-certificates wget && rm -rf /lib/apt/lists/*
-
-# Set up MySQL client SSL defaults inside the container
-RUN echo "[client]" >> /etc/mysql/conf.d/aiven-ssl.cnf && \
+# Force MySQL CLI tools (mysqladmin ping) to use SSL mode for Aiven
+RUN mkdir -p /etc/mysql/conf.d/ && \
+    echo "[client]" > /etc/mysql/conf.d/aiven-ssl.cnf && \
     echo "ssl-mode=REQUIRED" >> /etc/mysql/conf.d/aiven-ssl.cnf
 
-# Enable SSL for PrestaShop database setup
+# Enable internal PrestaShop database SSL
 ENV DB_USE_SSL=1
